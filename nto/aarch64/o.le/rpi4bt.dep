@@ -1,0 +1,7 @@
+rpi4bt.o: /home/iismail/qnx/src/rpi4/rpi4BT/rpi4bt.c \
+ /home/iismail/qnx/src/rpi4/rpi4BT/transport.h \
+ /home/iismail/qnx/src/rpi4/rpi4BT/hci.h \
+ /home/iismail/qnx/src/rpi4/rpi4BT/hci_defs.h \
+ /home/iismail/qnx/src/rpi4/rpi4BT/btQueue.h \
+ /home/iismail/qnx/src/rpi4/rpi4BT/l2cap.h \
+ /home/iismail/qnx/src/rpi4/rpi4BT/l2cap_defs.h

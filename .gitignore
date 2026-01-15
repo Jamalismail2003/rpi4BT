@@ -1,0 +1,56 @@
+# Build artifacts
+rpi4-system-monitor
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Build directories
+build/
+dist/
+.build/
+
+# QNX specific
+.qnx-internal/
+*.qnx
+
+# Debug symbols
+*.dSYM/
+*.su
+*.gch
+*.pch
+
+# Dependencies
+*.depend
+*.d
+
+# Test artifacts
+test_output/
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.swp
+.swo
+
+# Coverage reports
+*.gcov
+*.gcda
+*.gcno
+coverage/
