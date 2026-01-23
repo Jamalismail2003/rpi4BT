@@ -1,5 +1,7 @@
 # Build artifacts
-rpi4-system-monitor
+rpi4BT
+*.dep
+*.pinfo
 *.o
 *.a
 *.so
