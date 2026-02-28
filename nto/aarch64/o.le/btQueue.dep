@@ -1,2 +1,0 @@
-btQueue.o: /home/iismail/qnx/src/rpi4/rpi4BT/btQueue.c \
- /home/iismail/qnx/src/rpi4/rpi4BT/btQueue.h

@@ -1,4 +1,0 @@
-transport_uart.o: /home/iismail/qnx/src/rpi4/rpi4BT/transport_uart.c \
- /home/iismail/qnx/src/rpi4/rpi4BT/transport_uart.h \
- /home/iismail/qnx/src/rpi4/rpi4BT/transport.h \
- /home/iismail/qnx/src/rpi4/rpi4BT/utils.h

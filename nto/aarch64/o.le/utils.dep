@@ -1,2 +1,0 @@
-utils.o: /home/iismail/qnx/src/rpi4/rpi4BT/utils.c \
- /home/iismail/qnx/src/rpi4/rpi4BT/utils.h

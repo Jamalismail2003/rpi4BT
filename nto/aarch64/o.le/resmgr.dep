@@ -1,2 +1,0 @@
-resmgr.o: /home/iismail/qnx/src/rpi4/rpi4BT/resmgr.c \
- /home/iismail/qnx/src/rpi4/rpi4BT/public/rpi4bt/rpi4bt_msg.h
