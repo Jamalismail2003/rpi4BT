@@ -14,13 +14,13 @@ The project replaces the original Circle hardware glue with QNX drivers and reso
 | Path | Description |
 | --- | --- |
 | `rpi4bt.c`, `menu.c` | Entry point and interactive console. |
-| `uartTransport.c`, `gpio.c`, `mbox.c` | Low-level hardware access for PL011, GPIO muxing, and mailbox clock setup. |
-| `hciLayer.c`, `hciEvent.c`, `_hci_defs.h` | HCI state machine, command/event parsing, remote device tracking. |
-| `rfLayer.c`, `lcapLayer.c`, `hidLayer.c` | RFCOMM channels, basic L2CAP helpers, and HID profile support (tested with PS controllers). |
-| `sdpLayer.c`, `sdp_parser.c`, `_sdp_defs.h` | SDP request builder/parser for service discovery. |
+| `transport*.c`, `hci*.c` | UART transport + HCI state machine and event parsing. |
+| `rfcomm.c`, `l2cap.c`, `hid.c` | RFCOMM channels, L2CAP helpers, and HID profile support. |
+| `sdp.c`, `sdp_parser.c`, `sdp_defs.h` | SDP request builder and parser. |
 | `client.c`, `btQueue.*`, `resmgr.c` | QNX resource manager endpoint (`/dev/bt_device`) and RFCOMM client queue helpers. |
-| `include/` | Shared headers (Broadcom firmware IDs, GPIO, utility helpers). |
-| `nto/aarch64/o.le/` | Default build output directory (binary + objects produced by `make`). |
+| `public/rpi4bt/rpi4bt_msg.h` | Public devctl/shared message header installed to `/usr/include/rpi4bt/`. |
+| `test/` | GoogleTest unit test development area. |
+| `build/` | Build output directory created by `make` (`build/bin`, `build/obj`). |
 
 ## Prerequisites
 - QNX Software Development Platform 8.0 (or later) with the aarch64le toolchain.
@@ -31,20 +31,35 @@ The project replaces the original Circle hardware glue with QNX drivers and reso
 ## Build
 1. Prepare the QNX cross-build environment (one-time per shell):
    ```bash
-   source /path/to/qnxsdp-env.sh          # sets QNX_HOST/TARGET and PATH
-   export PROJECT_ROOT=/Users/.../rpi4BT  # optional shortcut used by qmake
+   source /path/to/qnxsdp-env.sh
    ```
-2. Build the aarch64 target:
+2. Build the fixed aarch64 target:
    ```bash
    cd rpi4BT
-   make        # invokes qcc via common.mk/qtargets.mk
+   make
    ```
-3. The resulting binary is placed at `nto/aarch64/o.le/rpi4BT`. Objects (`*.o`) and the `.pinfo` file land in the same directory. Use `make clean` to wipe artifacts.
+3. Output locations:
+   - Binary: `build/bin/rpi4BT`
+   - Objects/deps: `build/obj/`
+
+4. Install binary and public header:
+   ```bash
+   make install
+   ```
+   This installs:
+   - `/usr/bin/rpi4BT`
+   - `/usr/include/rpi4bt/rpi4bt_msg.h`
+
+5. Unit tests:
+   ```bash
+   make test      # build tests in test/
+   make test-run  # execute run_rpi4bt_tests
+   ```
 
 ## Deploy & Run on the Pi
 1. Copy the binary to the target (SCP/NFS/QNX `cp`), e.g.:
    ```bash
-   scp nto/aarch64/o.le/rpi4bt root@<pi-ip>:/usr/bin/
+   scp build/bin/rpi4BT root@<pi-ip>:/usr/bin/
    ```
 2. On the Pi (QNX shell):
    - Ensure GPIO pins 32/33 are in ALT3 (UART3) and pins 14/15 are inputs if UART0 is unused (`gpio-bcm2711 set 32 a3`, etc.).

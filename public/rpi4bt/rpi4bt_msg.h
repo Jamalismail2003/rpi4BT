@@ -1,6 +1,9 @@
 #ifndef _rpi4bt_msg_h_
 #define _rpi4bt_msg_h_
 
+#include <stdint.h>
+#include <devctl.h>
+
 typedef struct {
     uint32_t cmd;
     char mac_addr[18];  

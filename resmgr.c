@@ -12,7 +12,7 @@
 
 #include <sys/dispatch.h>
 
-#include "public/rpi4bt/rpi4bt_msg.h"
+#include <rpi4bt/rpi4bt_msg.h>
 
 void ctrl_process_command(const int command, uint8_t *in, uint8_t *out, int *nbytes);
 // <- Since we are overritting "iofunc_attr_t", the following declaration should set before including "sys/iofunc.h"
@@ -295,4 +295,3 @@ printf("-- MsgReplyv failed - ctp->rcvid:%d\n", ctp->rcvid);
     MsgReply(ctp->rcvid, status, NULL, 0);
     return _RESMGR_NOREPLY;
 }
-

@@ -17,7 +17,7 @@
 
 #include "hci.h"
 #include "sdp.h"
-#include "public/rpi4bt/rpi4bt_msg.h"
+#include <rpi4bt/rpi4bt_msg.h>
 
 #define TIMEOUT_MS 			20000
 
