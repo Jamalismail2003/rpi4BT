@@ -112,7 +112,7 @@ typedef struct {
 
 void rfcommLayer_create(l2cap_context_t *pLCAP);
 
-rfChannel *openRFChannel(l2cap_context_t *l2cap_ctx, u8 *addr, u8 channel_num);
+rfChannel *openRFChannel(l2cap_context_t *l2cap_ctx, const u8 *addr, u8 channel_num);
 void closeRFChannel(rfChannel *channel);
 void rfLayer_sendData(rfChannel *channel, const u8 *data, u16 len);
 int getOpenChannels(l2cap_context_t *l2cap_ctx, rfChannel **buf, int max);

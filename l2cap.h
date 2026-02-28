@@ -99,7 +99,7 @@ int lcapLayer_sendData(void *cmd, uint32_t cmd_size);
 void lcapLayer_registerClient(l2cap_context_t *layer, lcapClient *pClient);
 //lcapConnection* lcapLayer_startConnection(lcapLayer *layer, u8 *addr, u16 psm);
 //lcapConnection* lcapLayer_startConnection(u8 *addr, u16 psm);
-lcapConnection* lcapLayer_startConnection(l2cap_context_t *l2cap_ctx, u8 *addr, u16 psm);
+lcapConnection* lcapLayer_startConnection(l2cap_context_t *l2cap_ctx, const u8 *addr, u16 psm);
 void lcapLayer_closeConnection(lcapConnection *lcn);
 
 // Additional function declarations for lcapLayer

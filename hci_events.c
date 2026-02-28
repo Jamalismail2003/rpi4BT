@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include "hci_defs.h"
 #include "hci.h"
+#include "l2cap.h"
 #include "utils.h"
 //#include "lcapLayer.h"
 //#include "uartTransport.h"
@@ -584,7 +585,7 @@ void processEvent(hci_context_t *context, const void *buffer, unsigned length)
 	assert(length >= sizeof(hci_event_header));
 	hci_event_header *pHeader = (hci_event_header *) buffer;
 
-	log_info("-->  %s", getBTEventName(pHeader->event_code));
+	//log_info("-->  %s", getBTEventName(pHeader->event_code));
 
 	switch (pHeader->event_code)
 	{
@@ -1161,6 +1162,5 @@ void processEvent(hci_context_t *context, const void *buffer, unsigned length)
 			
 	}	//  switch(event_code)
 }	// 	hciLayer::processEvent()
-
 
 

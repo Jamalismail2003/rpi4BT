@@ -1004,7 +1004,7 @@ void controlParamNegotiation(rfChannel *dlc0, bool is_command, u8 *data, u8 len)
         dpnResponse.len = (sizeof(dpnParameters) << 1) | 0x01;
         memcpy(&dpnResponse.params, params, sizeof(dpnParameters));
         dpnResponse.params.ConvergenceLayer = 0x00;
-        dpnResponse.params.FrameType &= 0xe0;
+        dpnResponse.params.FrameType = 0;
             // to match lenovo
             
         bool is_response = channel->channel_state & RF_CHANNEL_STATE_INCOMING;
@@ -1132,7 +1132,7 @@ void closeRFChannel(rfChannel *channel)
 
 
 
-rfChannel *openRFChannel(l2cap_context_t *l2cap_ctx, u8 *addr, u8 channel_num)
+rfChannel *openRFChannel(l2cap_context_t *l2cap_ctx, const u8 *addr, u8 channel_num)
     // client must know, and pass in desired channel_num (from SDP)
 {
     log_indented(8, "RFComm: openRFChannel(%s,%d)",addrToString(addr),channel_num);
@@ -1273,4 +1273,3 @@ int rfcomm_init(l2cap_context_t *l2cap_ctx)
 
     return 0;
 }
-

@@ -854,7 +854,7 @@ void l2cap_handle_hci_data(hci_context_t *hci_context, uint8_t *buffer, size_t l
 
 
 
-lcapConnection* lcapLayer_startConnection(l2cap_context_t *l2cap_ctx, u8 *addr, u16 psm) 
+lcapConnection* lcapLayer_startConnection(l2cap_context_t *l2cap_ctx, const u8 *addr, u16 psm) 
 {
     log_indented(8, "startLcapConnection(%s,0x%04x\n)",addrToString(addr),psm);
 

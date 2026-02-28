@@ -16,6 +16,8 @@
 #include "hci.h"
 #include "rfcomm.h"
 #include "hid.h"
+#include "menu.h"
+#include "client.h"
 
 static int data_available = 0;  // Condition flag
 btQueue client_data_queue;
@@ -24,14 +26,14 @@ static pthread_cond_t client_cond = PTHREAD_COND_INITIALIZER;
 
 
 
-int bt_client_open(hci_context_t *hci_ctx, char *mac_addr, int rf_channel) {
+int bt_client_open(hci_context_t *hci_ctx, const char *mac_addr, int rf_channel) {
 
     hciRemoteDevice *device = selectDevice_by_addr(mac_addr);
     if (device == NULL) {
     	return -1;
     }
 
-	rfChannel *m_rfChannel = openRFChannel(hci_ctx->user_data, strToBtAddr(mac_addr), 0x1); // iphone13
+	rfChannel *m_rfChannel = openRFChannel(hci_ctx->user_data, strToBtAddr(mac_addr), (u8)rf_channel);
 
 	if (!m_rfChannel) {
 		log_error("Could not openRFChannel()!!\n");
@@ -105,7 +107,7 @@ log_error("bt_client_write: called...");
 	        int chunk_size = (nbytes - offset > MAX_CHUNK_SIZE) ? MAX_CHUNK_SIZE : nbytes - offset;
 
 	        // Send the chunk
-	        rfLayer_sendData(channel, buf + offset, chunk_size);
+	        rfLayer_sendData(channel, (u8 *)buf + offset, chunk_size);
 
 	        // Move the offset forward
 	        offset += chunk_size;
@@ -132,18 +134,18 @@ int bt_client_read(void *buf, size_t nbytes)
 
 	btBuffer *pEntry = btQueue_dequeue(&client_data_queue);
 	if(pEntry) { // TODO: check if(nbytes < pEntry.length)
-		int nbytes = pEntry->length;
+		int read_bytes = pEntry->length;
 
-		log_error("bt_client_read: called... nbytes:%d", nbytes);
+		log_error("bt_client_read: called... nbytes:%d", read_bytes);
 
-		memcpy(buf, pEntry->buffer, nbytes);
+		memcpy(buf, pEntry->buffer, read_bytes);
 		btBuffer_destroy(pEntry);
 
 		if(client_data_queue.m_pFirst == NULL) {
 			data_available = 0;
 		}
 		pthread_mutex_unlock(&client_mutex);	
-		return nbytes;
+		return read_bytes;
 	}
 
 	pthread_mutex_unlock(&client_mutex);	
@@ -268,5 +270,4 @@ void client_init_queue(l2cap_context_t *l2cap_ctx)
 
 	hid_register_client(l2cap_ctx, hid_client_callback);
 }
-
 

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h> 
+#include <stdbool.h>
 #include "hci_defs.h"
 #include "btQueue.h"
 #include "transport.h"
@@ -22,7 +23,7 @@
 #define HCC_INQUIRY_DEVICE_FOUND     0x0200
 #define HCC_INQUIRY_NAME_FOUND       0x0400
 
-#define INQUIRY_SECONDS              9 // Scan timeout
+#define INQUIRY_SECONDS              12 // Scan timeout
 #define HCI_DEVICE_INCLUDE_UNUSED_FIELDS   0
 
 typedef struct hciRemoteDevice hciRemoteDevice;
@@ -115,6 +116,11 @@ int hci_register_data_callback(hci_context_t *context, hci_data_callback_t callb
 void hci_receive_data(hci_context_t *context, uint8_t *data, size_t length);
 //----------------------------
 
+int hci_send_command(hci_context_t *context, void *cmd, uint32_t cmd_size);
+void hci_send_data(hci_context_t *context, void *data, unsigned length);
+int hci_send_hci_command(hci_context_t *context, void *cmd, uint32_t cmd_size);
+int hci_send_hci_data(hci_context_t *context, void *data, uint32_t data_size);
+
 int hciLayer_init(hci_context_t *hci);
 int SendHCICommand(void *cmd, uint32_t cmd_size);
 int sendCommand(void *cmd, uint32_t cmd_size);
@@ -132,13 +138,15 @@ hciRemoteDevice *findDeviceByHandle(hci_context_t *context, u16 handle);
 const u8 *strToBtAddr(const char *str);
 
 void hci_base_setup(hci_context_t *context);
-void hciVendor_setup(void);
+void hci_base_reset(hci_context_t *context);
+void hci_vendor_setup(hci_context_t *context);
 
 void saveDevices(hci_context_t *context);
-void loadDevices();
+void loadDevices(hci_context_t *context);
+void unpair(hci_context_t *context, hciRemoteDevice *device);
 
 void  hciLayer_closeConnection(hci_context_t *context, hciRemoteDevice *device);
-hciRemoteDevice *hciLayer_startConnection(hci_context_t *context, uint8_t *addr);
+hciRemoteDevice *hciLayer_startConnection(hci_context_t *context, const uint8_t *addr);
 
 hci_context_t *hci_get_context(void);
 

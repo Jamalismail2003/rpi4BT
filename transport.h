@@ -37,6 +37,8 @@ struct transport_context_t {
 transport_context_t *transport_init(int transport_type);
 void transport_destroy(transport_context_t *transport);
 void Receive(transport_context_t *transport, uint8_t nChar);
+int serial_send(transport_context_t *transport, const uint8_t *data, size_t length);
+int serial_init(transport_context_t *transport);
 
 enum {
     TRANSPORT_USB,

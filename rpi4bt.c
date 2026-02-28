@@ -15,8 +15,17 @@
 #include "transport.h"
 #include "hci.h"
 #include "l2cap.h"
+#include "menu.h"
+#include "sdp.h"
+#include "rfcomm.h"
+#include "hid.h"
+#include "client.h"
+#include "resmgr.h"
+#include "utils.h"
 
-void * pairing(hci_context_t *context) { 
+static void *pairing(void *arg)
+{
+    hci_context_t *context = (hci_context_t *)arg;
     while(1) {
         // TODO: replace with function call
         if(context->base_m_is_setup == false) {
@@ -26,6 +35,8 @@ void * pairing(hci_context_t *context) {
 
         menu(context);
     }
+
+    return NULL;
 }
 
 #if 1

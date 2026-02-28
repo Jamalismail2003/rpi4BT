@@ -100,7 +100,7 @@ int hci_send_command(hci_context_t *context, void *cmd, uint32_t cmd_size) {
     memcpy(buffer->buffer, (uint8_t *)cmd, cmd_size);
     buffer->length = cmd_size;
 
-    display_bytes("<--sendCmd - hci>", (uint8_t *)cmd, cmd_size);
+    // display_bytes("<--sendCmd - hci>", (uint8_t *)cmd, cmd_size);
 
     btQueue_enqueueBuffer(&context->m_command_queue, buffer);
 
@@ -273,7 +273,7 @@ void  hciLayer_closeConnection(hci_context_t *context, hciRemoteDevice *device)
 }
 
 
-hciRemoteDevice *hciLayer_startConnection(hci_context_t *context, uint8_t *addr)
+hciRemoteDevice *hciLayer_startConnection(hci_context_t *context, const uint8_t *addr)
 {
     log_indented(8, "HCI: hciLayer::startConnection(%s)\n",addrToString(addr));
     
@@ -581,4 +581,3 @@ void hci_receive_data(hci_context_t *context, uint8_t *data, size_t length) {
         context->data_callback(context, data, length);
     }
 }
-

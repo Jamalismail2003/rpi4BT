@@ -10,6 +10,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "transport.h"
+#include "utils.h"
 
 #ifndef CCTS_OFLOW
 #define CCTS_OFLOW 0x00010000
@@ -48,11 +49,11 @@ typedef struct {
     unsigned tx_tail;
     unsigned tx_count;
 
-    transport_context_t *transport
+    transport_context_t *transport;
 } app_ctx_t;
 
 static app_ctx_t ctx;
-
+#if 0
 static void hexdump(const uint8_t *buf, int len)
 {
     int i;
@@ -61,7 +62,7 @@ static void hexdump(const uint8_t *buf, int len)
     }
     printf("\n");
 }
-
+#endif
 static void dump_modem_bits(int fd)
 {
     int mstat = 0;
@@ -79,29 +80,10 @@ static void dump_modem_bits(int fd)
            (mstat & TIOCM_CAR) ? "HIGH" : "LOW");
 }
 
-static int contains_reset_ack(const uint8_t *buf, size_t len)
-{
-    static const uint8_t ack[] = { 0x04, 0x0E, 0x04, 0x01, 0x03, 0x0C, 0x00 };
-    size_t i;
-
-    if (len < sizeof(ack)) {
-        return 0;
-    }
-    for (i = 0; i <= len - sizeof(ack); i++) {
-        if (memcmp(buf + i, ack, sizeof(ack)) == 0) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-
 static void *rx_thread_fn(void *arg)
 {
     app_ctx_t *ctx = (app_ctx_t *)arg;
     uint8_t tmp[64];
-    uint8_t acc[256];
-    size_t acc_len = 0;
 
     pthread_setname_np(pthread_self(), "BT Rx Handler");
 
@@ -127,8 +109,8 @@ static void *rx_thread_fn(void *arg)
             continue;
         }
 
-        printf("RX %d bytes: ", n);
-        hexdump(tmp, n);
+        //printf("RX %d bytes: ", n);
+        //hexdump(tmp, n);
 
         for (int i = 0; i < n; i++) {
             Receive(ctx->transport, tmp[i]);
@@ -183,7 +165,6 @@ static void *tx_thread_fn(void *arg)
             break;
         }
         if (ctx->tx_count > 0) {
-            printf("DEBUG: Dequeuing item for transmission, tx_count = %u\n", ctx->tx_count);
             item = ctx->txq[ctx->tx_head];
             ctx->tx_head = (ctx->tx_head + 1U) % TX_QUEUE_DEPTH;
             ctx->tx_count--;
@@ -192,8 +173,6 @@ static void *tx_thread_fn(void *arg)
         pthread_mutex_unlock(&ctx->tx_lock);
 
         if (have_item) {
-            printf("DEBUG: Transmitting %zu bytes\n", item.len);
-
             ssize_t wr = write(ctx->fd, item.data, item.len);
             if (wr != (ssize_t)item.len) {
                 perror("tx write");
@@ -224,11 +203,11 @@ int serial_send(transport_context_t *transport, const uint8_t *data, size_t leng
     item->len = length;
     ctx->tx_tail = (ctx->tx_tail + 1U) % TX_QUEUE_DEPTH;
     ctx->tx_count++;
-    printf("DEBUG:  Enqueued %zu bytes for transmission\n", length);
+    //printf("DEBUG:  Enqueued %zu bytes for transmission\n", length);
     pthread_cond_signal(&ctx->tx_cv);
     pthread_mutex_unlock(&ctx->tx_lock);
 
-    printf("DEBUG: ctx->tx_count = %u\n", ctx->tx_count);
+    //printf("DEBUG: ctx->tx_count = %u\n", ctx->tx_count);
     return length;
 }
 
@@ -237,11 +216,9 @@ int serial_init(transport_context_t *transport)
     printf("DEBUG: Initializing serial transport\n");
 
     const char *devnode = "/dev/ser11";
-    uint8_t hci_reset[] = { 0x01, 0x03, 0x0C, 0x00 };
     int fd;
     int bits;
     int rc;
-    int exit_code = 0;
     struct termios tio;
 
     memset(&ctx, 0, sizeof(ctx));

@@ -324,7 +324,7 @@ const char* getUUIDName(int uuid)
 {
     for (unsigned int i = 0; i < UUID_TABLE_SIZE; i++)
     {
-        if (uuid_table[i].uuid == uuid_table[i].uuid && uuid_table[i].uuid == uuid)
+        if (uuid_table[i].uuid == uuid)
             return uuid_table[i].name;
     }
     return NULL;

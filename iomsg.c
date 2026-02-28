@@ -17,6 +17,8 @@
 
 #include "hci.h"
 #include "sdp.h"
+#include "menu.h"
+#include "client.h"
 #include <rpi4bt/rpi4bt_msg.h>
 
 #define TIMEOUT_MS 			20000
@@ -30,7 +32,7 @@ static int list_devices(resmgr_context_t *ctp, io_devctl_t *msg, hci_context_t *
 
 	int nbytes = 0;
 	char resp[4096];
-	custom_msg_t *input_msg = _DEVCTL_DATA(msg->i);
+	//custom_msg_t *input_msg = _DEVCTL_DATA(msg->i);
 	//char *resp = ((char*)input_msg + sizeof(custom_msg_t));
 	extern hciRemoteDevice *m_selected_device;
 
@@ -44,15 +46,16 @@ static int list_devices(resmgr_context_t *ctp, io_devctl_t *msg, hci_context_t *
 */
 	while (device)
 	{
-		uint8_t status[] = "not connected";
+		char status[] = "not connected";
+		int idx = dev_num++;
 		if (device->handle)
 			strcpy(status, "connected");
 
 		printf("   %s[%d] %s  %-20s %-18s %s\n", device == m_selected_device ? "*" : " ",
-			dev_num++, addrToString(device->addr), device->name, (const char *) status, device->link_key_type ? "PAIRED" : "");
+			idx, addrToString(device->addr), device->name, status, device->link_key_type ? "PAIRED" : "");
 
 		nbytes += sprintf(resp + nbytes, "   %s[%d] %s  %-20s %-18s %s\n", device == m_selected_device ? "*" : " ",
-				dev_num++, addrToString(device->addr), device->name, (const char *) status, device->link_key_type ? "PAIRED" : "");
+				idx, addrToString(device->addr), device->name, status, device->link_key_type ? "PAIRED" : "");
 
 		device = device->next;
 	}
@@ -67,7 +70,7 @@ SETIOV(ctp->iov + 1, resp, nbytes);
 //msg->o.nbytes = nbytes;
 int status = MsgReplyv(ctp->rcvid, EOK, ctp->iov, 2);
 if (status == -1) {
-    printf("== MsgReplyv failed - ctp->rcvid:%d\n", ctp->rcvid);
+    printf("== MsgReplyv failed - ctp->rcvid:%ld\n", (long)ctp->rcvid);
 }
 
 	return EOK;
@@ -144,13 +147,13 @@ static int pair_device(resmgr_context_t *ctp, io_devctl_t *msg, hci_context_t *h
 	}
 
 	if (timeout || !device) {
-		strcpy(resp, "Pairing %s failed");
-		nbytes = strlen("failed") + 1;
+		strcpy(resp, "Pairing failed");
+		nbytes = strlen(resp) + 1;
 		ret = -1;
 	} else {
 		// FIXME: it's possible it didn't timeout & valid device but link_key_type is zero... we should failed.
-		strcpy(resp, "success");
-		nbytes = strlen("Pairing %s successed") + 1;
+		strcpy(resp, "Pairing succeeded");
+		nbytes = strlen(resp) + 1;
 		ret = EOK;
 	}
 
@@ -159,11 +162,11 @@ SETIOV(ctp->iov + 1, resp, nbytes);
 //msg->o.nbytes = nbytes;
 int status = MsgReplyv(ctp->rcvid, EOK, ctp->iov, 2);
 if (status == -1) {
-    printf("== MsgReplyv failed - ctp->rcvid:%d\n", ctp->rcvid);
+    printf("== MsgReplyv failed - ctp->rcvid:%ld\n", (long)ctp->rcvid);
 }
 
 
-	return EOK;
+	return ret;
 }
 
 //static int sdp_device(hci_context_t *hci_ctx, custom_msg_t *input_msg, char *resp)
@@ -171,8 +174,8 @@ static int sdp_device(resmgr_context_t *ctp, io_devctl_t *msg, hci_context_t *hc
 {
 
 	int ret = EOK;
-	int nbytes = 0;
-	char *resp = NULL;
+	//int nbytes = 0;
+	//char *resp = NULL;
 	custom_msg_t *input_msg = _DEVCTL_DATA(msg->i);
 	custom_msg_t *output_msg = _DEVCTL_DATA(msg->i);
 	
@@ -210,7 +213,7 @@ static int sdp_device(resmgr_context_t *ctp, io_devctl_t *msg, hci_context_t *hc
 	SETIOV(ctp->iov + 0, &msg->o, sizeof(msg->o) + sizeof(custom_msg_t));
 	int status = MsgReplyv(ctp->rcvid, EOK, ctp->iov, 2);
 	if (status == -1) {
-	    printf("== MsgReplyv failed - ctp->rcvid:%d\n", ctp->rcvid);
+	    printf("== MsgReplyv failed - ctp->rcvid:%ld\n", (long)ctp->rcvid);
 	}
 
 	if(request && request->output_buf) {
@@ -238,7 +241,7 @@ static int rfcomm_device(resmgr_context_t *ctp, io_devctl_t *msg, hci_context_t 
 	SETIOV(ctp->iov + 1, resp, nbytes);
 	int status = MsgReplyv(ctp->rcvid, EOK, ctp->iov, 2);
 	if (status == -1) {
-	    printf("== MsgReplyv failed - ctp->rcvid:%d\n", ctp->rcvid);
+	    printf("== MsgReplyv failed - ctp->rcvid:%ld\n", (long)ctp->rcvid);
 	}
 
 	return ret;
@@ -246,7 +249,7 @@ static int rfcomm_device(resmgr_context_t *ctp, io_devctl_t *msg, hci_context_t 
 
 
 //void devctl_process_command(resmgr_context_t *ctp, custom_msg_t *input_msg, char *resp)
-void devctl_process_command(resmgr_context_t *ctp, io_devctl_t *msg)
+int devctl_process_command(resmgr_context_t *ctp, io_devctl_t *msg)
 {
 	hci_context_t *hci_ctx = hci_get_context();
 	custom_msg_t *input_msg = _DEVCTL_DATA(msg->i);

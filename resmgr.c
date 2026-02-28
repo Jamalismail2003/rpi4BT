@@ -13,8 +13,10 @@
 #include <sys/dispatch.h>
 
 #include <rpi4bt/rpi4bt_msg.h>
+#include "client.h"
 
 void ctrl_process_command(const int command, uint8_t *in, uint8_t *out, int *nbytes);
+int devctl_process_command(resmgr_context_t *ctp, io_devctl_t *msg);
 // <- Since we are overritting "iofunc_attr_t", the following declaration should set before including "sys/iofunc.h"
 struct TPattr_s;
 #define IOFUNC_ATTR_T   struct TPattr_s
@@ -48,10 +50,10 @@ char    *devnames [NUM_DEVICES] =
 #define RPI_CTRL       2
 
 // Function Prototypes
-int io_read(resmgr_context_t *ctp, io_read_t *msg, iofunc_ocb_t *ocb);
-int io_write(resmgr_context_t *ctp, io_write_t *msg, iofunc_ocb_t *ocb);
+int io_read(resmgr_context_t *ctp, io_read_t *msg, void *ocb_handle);
+int io_write(resmgr_context_t *ctp, io_write_t *msg, void *ocb_handle);
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void *extra);
-int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, iofunc_ocb_t *ocb);
+int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, void *ocb_handle);
 
 int setup_resource_manager() 
 {
@@ -59,8 +61,6 @@ int setup_resource_manager()
     resmgr_attr_t resmgr_attr;
     dispatch_t *dpp;
     thread_pool_t *tpp;
-    int id;
-
     pthread_setname_np(pthread_self(), "BT ResMgr");
 
     if((dpp = dispatch_create()) == NULL) {
@@ -96,11 +96,11 @@ int setup_resource_manager()
 
     memset(&pool_attr, 0, sizeof(pool_attr));
     pool_attr.handle = dpp;
-    pool_attr.context_alloc = dispatch_context_alloc;
-    pool_attr.block_func = dispatch_block;
-    pool_attr.unblock_func = dispatch_unblock;
-    pool_attr.handler_func = dispatch_handler;
-    pool_attr.context_free = dispatch_context_free;
+    pool_attr.context_alloc = (resmgr_context_t *(*)(dispatch_t *))dispatch_context_alloc;
+    pool_attr.block_func = (resmgr_context_t *(*)(resmgr_context_t *))dispatch_block;
+    pool_attr.unblock_func = (void (*)(resmgr_context_t *))dispatch_unblock;
+    pool_attr.handler_func = (int (*)(resmgr_context_t *))dispatch_handler;
+    pool_attr.context_free = (void (*)(resmgr_context_t *))dispatch_context_free;
     pool_attr.lo_water = 2;
     pool_attr.hi_water = 4;
     pool_attr.increment = 1;
@@ -116,9 +116,10 @@ int setup_resource_manager()
 }
 
 // Define the IO functions
-int io_read(resmgr_context_t *ctp, io_read_t *msg, iofunc_ocb_t *ocb) 
+int io_read(resmgr_context_t *ctp, io_read_t *msg, void *ocb_handle) 
 {
-    char data[1024];
+    iofunc_ocb_t *ocb = (iofunc_ocb_t *)ocb_handle;
+    uint8_t data[1024];
     int nbytes = 0;
     int status;
 
@@ -171,11 +172,11 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, iofunc_ocb_t *ocb)
     return _RESMGR_NOREPLY;
 }
 
-int io_write(resmgr_context_t *ctp, io_write_t *msg, iofunc_ocb_t *ocb) 
+int io_write(resmgr_context_t *ctp, io_write_t *msg, void *ocb_handle) 
 {
+    iofunc_ocb_t *ocb = (iofunc_ocb_t *)ocb_handle;
     char buf[1024]; // FIXME: why 1024?
     int status;
-    int nbytes;
 
     /* figure out device based on ocb */
     int device = ocb->attr->device;
@@ -188,7 +189,10 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, iofunc_ocb_t *ocb)
                 return status;
             }
             // display_bytes("io_write: ", buf, msg->i.nbytes);
-            nbytes = bt_client_write(buf, msg->i.nbytes);
+            if (bt_client_write(buf, msg->i.nbytes) < 0) {
+                return EIO;
+            }
+            status = EOK;
             break;
         }
         case RPI_HID:
@@ -222,8 +226,9 @@ int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void
     return iofunc_open_default(ctp, msg, handle, extra);
 }
 
-int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, iofunc_ocb_t *ocb) 
+int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, void *ocb_handle) 
 {
+    iofunc_ocb_t *ocb = (iofunc_ocb_t *)ocb_handle;
     int status = iofunc_devctl_default(ctp, msg, ocb);
     if (status != _RESMGR_DEFAULT) {
         return status;
@@ -248,21 +253,13 @@ int io_devctl(resmgr_context_t *ctp, io_devctl_t *msg, iofunc_ocb_t *ocb)
         case RPI_CTRL:
         {
             if (msg->i.dcmd == RPI4_CUSTOM_COMMAND) {
-                int nbytes, status;
-
-                char *output_buf = malloc(32768);
-                if(!output_buf) {
-                    printf("malloc() failed\n");
-                    exit(0);
-                }
-                // Use MsgRead() if received mesg is big and can't fit cache size???
-                custom_msg_t *o_msg = _DEVCTL_DATA(msg->o);
+                int cmd_status;
 
                 // Don't clear o_msg since it points the input mesg (msg->i) which has the cmd value
                 // memset(o_msg, 0, sizeof(custom_msg_t));
                 //nbytes = devctl_process_command(ctp, o_msg, output_buf);
-                status = devctl_process_command(ctp, msg);
-                if (status == -1) {
+                cmd_status = devctl_process_command(ctp, msg);
+                if (cmd_status == -1) {
                     printf("devctl_process_command() failed\n");
                     MsgError(ctp->rcvid, -1);
                     // FIXME: do what???

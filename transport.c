@@ -3,11 +3,10 @@
 #include <string.h>
 #include <assert.h>
 #include "transport.h"
-#include "transport_uart.h"
+//#include "transport_uart.h"
 #include "utils.h"
 #include "hci.h"
 #include "hci_defs.h"
-
 
 enum enumUartState {
     RxStateStart,
@@ -80,6 +79,7 @@ void Receive(transport_context_t *transport, uint8_t nChar) {
             break;
     }
 }
+
 
 // UART-specific send function
 static int uart_transport_send(transport_context_t *transport, const uint8_t *data, size_t length) 

@@ -514,7 +514,7 @@ u16 sdpDiscoveryRequest(u8 *buf, sdpRequest *req)
 // client API
 //----------------------------------------------------
 
-sdpRequest *sdpLayer_doSdpRequest(l2cap_context_t *l2cap_ctx, u8 *addr, u16 svc_id,  u16 begin_attr,  u16 end_attr )
+sdpRequest *sdpLayer_doSdpRequest(l2cap_context_t *l2cap_ctx, const u8 *addr, u16 svc_id,  u16 begin_attr,  u16 end_attr )
 {
     log_indented(8, "SDP: sdp_doSdpRequest(%s, 0x%04x, 0x%04x, 0x%04x)", addrToString(addr), svc_id, begin_attr, end_attr);    
 
@@ -605,4 +605,3 @@ int sdp_init(l2cap_context_t *l2cap_ctx)
 
     return 0;
 }
-

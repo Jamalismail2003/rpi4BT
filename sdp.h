@@ -93,7 +93,7 @@ u32 addService(
     u8 rfcomm_channel);         // set to zero if unused
 
 //sdpRequest *sdpLayer_doSdpRequest(u8 *addr, u16 svc_id,  u16 begin_attr,  u16 end_attr );
-sdpRequest *sdpLayer_doSdpRequest(l2cap_context_t *l2cap_ctx, u8 *addr, u16 svc_id,  u16 begin_attr,  u16 end_attr );
+sdpRequest *sdpLayer_doSdpRequest(l2cap_context_t *l2cap_ctx, const u8 *addr, u16 svc_id,  u16 begin_attr,  u16 end_attr );
 
 
 #endif // SDP_H

@@ -14,9 +14,11 @@
 #include "hci_defs.h"
 #include "hci.h"
 #include "rfcomm.h"
+#include "hid.h"
 #include "sdp.h"
 #include "sdp_defs.h"
 #include "utils.h"
+#include "menu.h"
 
 
 typedef struct 
@@ -45,7 +47,6 @@ select_uuid_type select_uuids[] =
 #define NUM_UUIDS  			(sizeof(select_uuids)/sizeof(select_uuid_type))
 
 
-#define INQUIRY_SECONDS			12
 #define PRE_POPULATE_DEVICES   	0
 
 #define STATE_NONE              	0
@@ -88,7 +89,7 @@ void listDevices(hci_context_t *context)
 
 	while (device)
 	{
-		uint8_t status[] = "not connected";
+		char status[] = "not connected";
 		if (device->handle)
 			strcpy(status, "connected");
 
@@ -99,7 +100,7 @@ void listDevices(hci_context_t *context)
 	}
 }
 
-hciRemoteDevice * selectDevice_by_addr(u8 *mac_addr)
+hciRemoteDevice *selectDevice_by_addr(const char *mac_addr)
 {
 #if 0
 	hciRemoteDevice *device = myhciLayer->m_first_device;
@@ -154,7 +155,7 @@ void selectDevice(hci_context_t *context, u8 num)
 
 void menu(hci_context_t *context)
 {
-	rfChannel 		 	*m_rfChannel;
+	static rfChannel *m_rfChannel = NULL;
 
 	if (m_state == STATE_STARTING)
 	{
@@ -178,11 +179,9 @@ void menu(hci_context_t *context)
 		printf("\n");	
 	}
 
-	uint8_t c[2];
-	if (scanf(" %s", &c) == 1) // try scanf("%d")
+	char c[2];
+	if (scanf(" %1s", c) == 1) // try scanf("%d")
 	{
-		c[0] &= 0xff;
-
 		// clear the state machine if !0..9 pressed
 		
 		if (c[0] < '0' || c[0] > '9')
@@ -212,7 +211,7 @@ void menu(hci_context_t *context)
 		else if (c[0] == 'p')
 		{
 			if (m_selected_device) {
-				hciRemoteDevice *device = hciLayer_startConnection(context, m_selected_device->addr);
+				hciLayer_startConnection(context, m_selected_device->addr);
 			} else {
 				printf("Select device to pair\n");
 			}
@@ -228,7 +227,7 @@ void menu(hci_context_t *context)
 				printf("kernel Unpairing from %s(%s) ...\n",
 					addrToString(m_selected_device->addr),
 					m_selected_device->name);
-					unpair(m_selected_device);
+				unpair(context, m_selected_device);
 				
 				printf("Unpairing from %s(%s) ...\n",
 					addrToString(m_selected_device->addr),
@@ -273,8 +272,7 @@ void menu(hci_context_t *context)
 		else if (c[0] >= '0' && c[0] <= '9')
 		{
 			if (m_state == STATE_SELECT_DEVICE)
-				//selectDevice(c - '0');
-				selectDevice(context, atoi(c));
+				selectDevice(context, (u8)atoi(c));
 				
 			// DO THE SDP REQUEST
 #if 1
@@ -388,7 +386,6 @@ void menu(hci_context_t *context)
 
 			//u8 msg[] = "Hello from rPi Bluetooth\n";
 			//u8 msg[] = "No Flow Control: Since flow control is off, neither side will wait for an explicit acknowledgment or control signal\0";
-			u8 msg[] = "The first practical DC (Direct Current) motor was invented by the British scientist William Sturgeon in 1832. Since then DC motors have been part of countless pieces of equipment and machinery.  Today DC motors range from huge models used in industrial equipment to tiny devices that can fit in the palm of your hand. They are inexpensive and are ideal for use in your Robotics, Quadcopter, and Internet of Things projects.  Unlike LED’s you can’t just connect a DC motor to one of the output pins of your Arduino or Raspberry Pi and expect it to work. DC motors have current and voltage requirements that are beyond the capabilities of your microcontroller or microcomputer. It is necessary to use some external electronics to drive and control the motor, and you’ll probably need a separate power supply as well. There are a number of ways to drive a DC motor from the output of your computing device. A single transistor can be used to drive a DC motor, this works well providing you do not need to change the direction that the motor is spinning. A more versatile way of controlling a DC motor is to use a circuit called an “H-Bridge”. An “H-Bridge” is an arrangement of transistors that allow you to control both the direction and speed of the motor. Today we’ll examine a very common H-Bridge module based around the L298N integrated circuit.";
 			u8 sync[] = {0xFF, 0x5A, 0x00, 0x1A, 0x80, 0xD9, 0x00, 0x00, 0x34, 0x01, 0x05, 0x08, 0x00, 0x05, 0xDC, 0x00, 0xFA, 0x1E, 0x03, 0x01, 0x00, 0x02, 0x02, 0x01, 0x01, 0xEF};
 			for (int i=0; i < num_avail; i++)
 			{
@@ -409,5 +406,3 @@ void menu(hci_context_t *context)
 	}	// m_pSerial->read()
 
 }	// CKernel::Run()
-
-

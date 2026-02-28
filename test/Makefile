@@ -8,7 +8,7 @@ OBJ_DIR := $(BUILD_DIR)/obj
 
 CPPFLAGS += -I.. -I../public
 CFLAGS += $(QCC_PLATFORM) -O0 -g3 -Wall
-CXXFLAGS += $(QCC_PLATFORM) -lang-c++ -O0 -g3 -Wall
+CXXFLAGS += $(QCC_PLATFORM) -O0 -g3 -Wall
 LDFLAGS += $(QCC_PLATFORM)
 LDLIBS += -lgtest -lgtest_main -lregex -lc++ -lm
 

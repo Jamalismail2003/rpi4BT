@@ -1,6 +1,7 @@
 #ifndef _hid_layer_h_
 #define _hid_layer_h_
 
+#include "l2cap.h"
 
 typedef void (*hid_callback)(const u8 *buffer, u16 length);
 
@@ -27,5 +28,9 @@ enum HID_TransactionTypes_t
     HID_TRANS_DATA                 = 0xA0,
     HID_TRANS_DATAC                = 0xB0,
 };
+
+int hid_connect(l2cap_context_t *l2cap_ctx, u8 *addr);
+void hid_register_client(l2cap_context_t *l2cap_ctx, hid_callback pClient);
+int hid_init(l2cap_context_t *l2cap_ctx);
 
 #endif

@@ -35,8 +35,9 @@ SRCS := \
 	sdp_parser.c \
 	transport.c \
 	transport_serial.c \
-	transport_uart.c \
 	utils.c
+#   transport_uart.c
+	
 
 OBJS := $(SRCS:%.c=$(OBJ_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
