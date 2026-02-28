@@ -29,6 +29,7 @@ struct transport_context_t {
     // Receive callback and user data
     transport_receive_callback_t receive_callback;
     void *receive_user_data;
+    void *serial_ctx; // For serial transport specific context
 };
 
 #define BUFFER_SIZE  0xFFFF

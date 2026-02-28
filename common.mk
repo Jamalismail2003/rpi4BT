@@ -1,9 +1,10 @@
 ifndef QCONFIG
 	QCONFIG=qconfig.mk
 endif
-CCFLAGS += -O0 -g3
 
 include $(QCONFIG)
+
+CCFLAGS += -O0 -g3
 
 #NAME = $(PROJECT_ROOT)
 

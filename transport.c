@@ -82,16 +82,26 @@ void Receive(transport_context_t *transport, uint8_t nChar) {
 }
 
 // UART-specific send function
-static int uart_transport_send(transport_context_t *transport, const uint8_t *data, size_t length) {
+static int uart_transport_send(transport_context_t *transport, const uint8_t *data, size_t length) 
+{
+#if 0
     for (size_t i = 0; i < length; i++) {
         uart_send(data[i]);
     }
+#else
+    serial_send(transport, data, length);
+#endif
+
     return length;
 }
 
 // UART-specific initialization
 static int uart_transport_init(transport_context_t *transport) {
+#if 0
     return uart_init(transport);
+#else
+    return serial_init(transport);
+#endif
 }
 
 // Generic transport initialization function

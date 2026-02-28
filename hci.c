@@ -7,7 +7,7 @@
 #include "utils.h"
 #include "hci.h"
 
-#define FILE_NAME "/stage/etc/hci_devices.txt"
+#define FILE_NAME "/etc/hci_devices.txt"
 
 static void receiveTransport(uint8_t hci_prefix, const void *const_buffer, unsigned length, void *user_data);
 static void process_serial_data(hci_context_t *context);
@@ -211,7 +211,7 @@ static void process_serial_data(hci_context_t *context) {
     pthread_setname_np(pthread_self(), "BT Cmd/Events/Data Handler");
 
     // TODO: use transport instead direct call of uart API
-    uart_reset();
+//    uart_reset();
 
     while (1)
     {
