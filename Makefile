@@ -3,11 +3,16 @@ CXX = qcc
 QCC_PLATFORM := -Vgcc_ntoaarch64le
 
 PROJECT := rpi4BT
+CLI_APP := rpi4bt-cli
+HID_APP := rpi4bt-hid
 
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
 BIN_DIR := $(BUILD_DIR)/bin
 TARGET := $(BIN_DIR)/$(PROJECT)
+CLI_TARGET := $(BIN_DIR)/$(CLI_APP)
+HID_TARGET := $(BIN_DIR)/$(HID_APP)
+APP_TARGETS := $(CLI_TARGET) $(HID_TARGET)
 
 PREFIX ?= /usr
 BINDIR ?= $(PREFIX)/bin
@@ -41,12 +46,23 @@ SRCS := \
 
 OBJS := $(SRCS:%.c=$(OBJ_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
+CLI_OBJ := $(OBJ_DIR)/apps/rpi-cli/rpi_cli.o
+HID_OBJ := $(OBJ_DIR)/apps/rpi-hid/rpi_hid.o
+APP_DEPS := $(CLI_OBJ:.o=.d) $(HID_OBJ:.o=.d)
 
 .PHONY: all clean install uninstall test test-run test-clean
 
-all: $(TARGET)
+all: $(TARGET) $(APP_TARGETS)
 
 $(TARGET): $(OBJS)
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+$(CLI_TARGET): $(CLI_OBJ)
+	@mkdir -p $(BIN_DIR)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+$(HID_TARGET): $(HID_OBJ)
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
@@ -54,14 +70,18 @@ $(OBJ_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
 
-install: $(TARGET)
+install: all
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL) -m 0755 $(TARGET) $(DESTDIR)$(BINDIR)/$(PROJECT)
+	$(INSTALL) -m 0755 $(CLI_TARGET) $(DESTDIR)$(BINDIR)/$(CLI_APP)
+	$(INSTALL) -m 0755 $(HID_TARGET) $(DESTDIR)$(BINDIR)/$(HID_APP)
 	$(INSTALL) -d $(DESTDIR)$(INCLUDEDIR)
 	$(INSTALL) -m 0644 public/rpi4bt/rpi4bt_msg.h $(DESTDIR)$(INCLUDEDIR)/rpi4bt_msg.h
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(PROJECT)
+	rm -f $(DESTDIR)$(BINDIR)/$(CLI_APP)
+	rm -f $(DESTDIR)$(BINDIR)/$(HID_APP)
 	rm -f $(DESTDIR)$(INCLUDEDIR)/rpi4bt_msg.h
 
 test:
@@ -77,3 +97,4 @@ clean: test-clean
 	rm -rf $(BUILD_DIR)
 
 -include $(DEPS)
+-include $(APP_DEPS)

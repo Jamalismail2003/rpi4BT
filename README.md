@@ -18,6 +18,8 @@ The project replaces the original Circle hardware glue with QNX drivers and reso
 | `rfcomm.c`, `l2cap.c`, `hid.c` | RFCOMM channels, L2CAP helpers, and HID profile support. |
 | `sdp.c`, `sdp_parser.c`, `sdp_defs.h` | SDP request builder and parser. |
 | `client.c`, `btQueue.*`, `resmgr.c` | QNX resource manager endpoint (`/dev/bt_device`) and RFCOMM client queue helpers. |
+| `apps/rpi-cli/rpi_cli.c` | User CLI app for scan/pair/status/SDP workflows through `/dev/rpiCTRL`. |
+| `apps/rpi-hid/rpi_hid.c` | HID sample app that reads game controller reports from `/dev/rpiHID`. |
 | `public/rpi4bt/rpi4bt_msg.h` | Public devctl/shared message header installed to `/usr/include/rpi4bt/`. |
 | `test/` | GoogleTest unit test development area. |
 | `build/` | Build output directory created by `make` (`build/bin`, `build/obj`). |
@@ -27,44 +29,66 @@ The project replaces the original Circle hardware glue with QNX drivers and reso
 - Raspberry Pi 4 running QNX with access to the on-board Bluetooth controller (BCM4345C0).
 - Ability to export the QNX environment (`QNX_HOST`, `QNX_TARGET`, and `PATH`) or source `qnxsdp-env.sh`.
 - Optional: `gpio-bcm2711`, `mbox-bcm2711`, or `devc-serpl011` utilities to double-check clock and pin settings as described in `Todo.txt`.
+- For self-host unit tests, install GoogleTest packages:
+  ```bash
+  apk add gtest
+  apk add gtest-dev
+  apk add gmock
+  ```
 
 ## Build
-1. Prepare the QNX cross-build environment (one-time per shell):
+Two supported build flows:
+
+1. Self-host build (on target):
+   ```bash
+   make CC=gcc CXX=gcc QCC_PLATFORM=
+   ```
+
+2. Traditional QNX host build/install:
    ```bash
    source /path/to/qnxsdp-env.sh
-   ```
-2. Build the fixed aarch64 target:
-   ```bash
-   cd rpi4BT
-   make
-   ```
-3. Output locations:
-   - Binary: `build/bin/rpi4BT`
-   - Objects/deps: `build/obj/`
-
-4. Install binary and public header:
-   ```bash
    make install
    ```
-   This installs:
-   - `/usr/bin/rpi4BT`
-   - `/usr/include/rpi4bt/rpi4bt_msg.h`
 
-5. Unit tests:
-   ```bash
-   make test      # build tests in test/
-   make test-run  # execute run_rpi4bt_tests
-   ```
+Output locations:
+   - Stack daemon: `build/bin/rpi4BT`
+   - CLI app: `build/bin/rpi4bt-cli`
+   - HID app: `build/bin/rpi4bt-hid`
+   - Objects/deps: `build/obj/`
+
+`make install` installs:
+- `/usr/bin/rpi4BT`
+- `/usr/bin/rpi4bt-cli`
+- `/usr/bin/rpi4bt-hid`
+- `/usr/include/rpi4bt/rpi4bt_msg.h`
+
+Unit tests:
+```bash
+make test      # build tests in test/
+make test-run  # execute run_rpi4bt_tests
+```
 
 ## Deploy & Run on the Pi
 1. Copy the binary to the target (SCP/NFS/QNX `cp`), e.g.:
    ```bash
    scp build/bin/rpi4BT root@<pi-ip>:/usr/bin/
    ```
-2. On the Pi (QNX shell):
-   - Ensure GPIO pins 32/33 are in ALT3 (UART3) and pins 14/15 are inputs if UART0 is unused (`gpio-bcm2711 set 32 a3`, etc.).
-   - Optional: start `devc-serpl011 -b115200 -c48000000 -e -F -u3 0xfe201600,153` if you want QNX’s serial service for debugging; `rpi4BT` also programs the UART directly.
-   - Confirm firmware/clock via `mbox-bcm2711 clockrate=...` if you need a non-default UART clock.
+2. Before starting `rpi4BT`, run the required serial/GPIO setup:
+   ```bash
+   slay devc-serpl011-rpi5
+   slay devc-ser8250
+   
+   gpio-bcm set 24 a3 pn
+   gpio-bcm set 25 a4 pn
+   gpio-bcm set 26 a4 pn
+   gpio-bcm set 27 a4 pn
+   gpio-bcm set 28 op pn dh
+   gpio-bcm set 29 op pn dl
+   sleep 0.2
+   gpio-bcm set 29 dh
+   sleep 1
+   devc-ser8250 -o nodaemon -vv -E -f -b115200 -c96000000 -u11 0x107d50c000^2,308 &
+   ```
 3. Run the stack as root (needed for `procmgr_ability`, mmap, and interrupt attaches):
    ```bash
    slog2info -c rpi4BT   # optional: clean log channel
